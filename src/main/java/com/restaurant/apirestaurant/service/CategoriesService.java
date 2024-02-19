@@ -11,7 +11,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+/**
+ * Kelas layanan untuk menangani operasi yang terkait dengan Kategori.
+ */
 @Service
 public class CategoriesService {
 
@@ -21,9 +23,9 @@ public class CategoriesService {
     /**
      * Membuat kategori baru berdasarkan permintaan yang diberikan.
      *
-     * @param  categoriesRequest  objek permintaan yang berisi nama kategori
-     * @return                   objek respons yang mewakili kategori yang dibuat
-     * */
+     * @param  categoriesRequest  Objek permintaan yang berisi nama kategori.
+     * @return                    Objek respons yang mewakili kategori yang dibuat.
+     */
     @Transactional
     public CategoriesResponse createCategories(CategoriesRequest categoriesRequest) {
         Categories categories = new Categories();
@@ -33,6 +35,13 @@ public class CategoriesService {
         return toCategoriesResponse(savedCategories);
     }
 
+    /**
+     * Memperbarui kategori yang ada berdasarkan id dan permintaan yang diberikan.
+     *
+     * @param  id                 Id dari kategori yang akan diperbarui.
+     * @param  categoriesRequest  Objek permintaan yang berisi nama kategori baru.
+     * @return                    Objek respons yang mewakili kategori yang diperbarui.
+     */
     @Transactional
     public CategoriesResponse updateCategories(Long id, CategoriesRequest categoriesRequest) {
         Categories categories = categoriesRepository.findById(id)
@@ -46,6 +55,11 @@ public class CategoriesService {
         return toCategoriesResponse(updatedCategories);
     }
 
+    /**
+     * Menghapus kategori berdasarkan id yang diberikan.
+     *
+     * @param  id  Id dari kategori yang akan dihapus.
+     */
     @Transactional
     public void deleteCategories(Long id) {
         Categories categories = categoriesRepository.findById(id)
@@ -54,6 +68,12 @@ public class CategoriesService {
         categoriesRepository.delete(categories);
     }
 
+    /**
+     * Mendapatkan kategori berdasarkan id yang diberikan.
+     *
+     * @param  id  Id dari kategori yang dicari.
+     * @return     Objek respons yang mewakili kategori yang dicari.
+     */
     @Transactional
     public CategoriesResponse getCategoriesById(Long id) {
         Categories categories = categoriesRepository.findById(id)
@@ -61,6 +81,13 @@ public class CategoriesService {
         return toCategoriesResponse(categories);
     }
 
+    /**
+     * Menampilkan daftar kategori.
+     *
+     * @param  page  Nomor halaman yang akan ditampilkan.
+     * @param  size  Jumlah kategori per halaman.
+     * @return       Halaman yang berisi daftar objek respons kategori.
+     */
     @Transactional(readOnly = true)
     public Page<CategoriesResponse> list(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -68,7 +95,12 @@ public class CategoriesService {
         return categoriesPage.map(this::toCategoriesResponse);
     }
 
-
+    /**
+     * Mengubah objek Kategori menjadi objek Respons Kategori.
+     *
+     * @param  categories  Objek Kategori yang akan diubah.
+     * @return             Objek Respons Kategori hasil konversi.
+     */
     private CategoriesResponse toCategoriesResponse(Categories categories) {
         return CategoriesResponse.builder()
                 .id(categories.getId())
