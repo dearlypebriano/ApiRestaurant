@@ -19,11 +19,11 @@ public class CategoriesController {
 
     /**
      * @path /api/categories/create - POST (Menambahkan data kategori berdasarkan input nameCategory (nama category) berdasarkan input Admin
-     * @param nameCategory
+     * @part request
      * @return
      */
-    @PostMapping(path = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CategoriesResponse> create(@RequestPart CategoriesRequest request) {
+    @PostMapping(path = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CategoriesResponse> create(@RequestBody CategoriesRequest request) {
         CategoriesResponse categoriesResponse = categoriesService.createCategories(request);
         return new ResponseEntity<>(categoriesResponse, HttpStatus.CREATED);
     }
@@ -35,7 +35,7 @@ public class CategoriesController {
      * @param  nameCategory   deskripsi dari parameter
      * @return                deskripsi dari nilai kembalian
      */
-    @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CategoriesResponse> update(@PathVariable Long id, @RequestParam CategoriesRequest nameCategory) {
         CategoriesResponse categoriesResponse = categoriesService.updateCategories(id, nameCategory);
         return new ResponseEntity<>(categoriesResponse, HttpStatus.OK);
