@@ -251,6 +251,22 @@ public class ProductService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public byte[] getImageDataById(String imageId) {
+        try {
+            Product product = productRepository.findByImageName(imageId);
+            if (product != null) {
+                Blob imageDataBlob = product.getImageData();
+                return blobToByteArray(imageDataBlob);
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image with ID : " + imageId + " not found!");
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to retrieve image data: " + e.getMessage());
+        }
+    }
+
+
     /**
      * Converts a Product object to a ProductResponse object
      *
