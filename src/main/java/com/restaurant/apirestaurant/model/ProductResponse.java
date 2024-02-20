@@ -13,9 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class ProductResponse {
-
+    private List<String> units;
     private String id;
-    private String nameProduct;
+    private String title;
+    private BigDecimal rating;
+    private BigDecimal discount;
     private BigDecimal price;
     private Integer qty;
     private String description;

@@ -18,6 +18,10 @@ import java.util.List;
 @Table(name = "products")
 public class Product {
 
+    @ElementCollection(targetClass = Unit.class)
+    @Enumerated(EnumType.STRING)
+    private List<Unit> units;
+
     @Id
     @GeneratedValue(generator = "uuid")
     @GenericGenerator(name = "uuid", strategy = "uuid2")
@@ -25,7 +29,11 @@ public class Product {
     private String id;
 
     @Column(name = "name_product")
-    private String nameProduct;
+    private String title;
+
+    private BigDecimal rating;
+
+    private BigDecimal discount;
 
     private BigDecimal price;
 

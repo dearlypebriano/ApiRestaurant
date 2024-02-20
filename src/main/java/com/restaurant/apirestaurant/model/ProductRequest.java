@@ -1,5 +1,6 @@
 package com.restaurant.apirestaurant.model;
 
+import com.restaurant.apirestaurant.entity.Unit;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class ProductRequest {
-
-    private String nameProduct;
+    private List<Unit> units;
+    private String title;
+    private BigDecimal rating;
+    private BigDecimal discount;
     private BigDecimal price;
     private Integer qty;
     private String description;

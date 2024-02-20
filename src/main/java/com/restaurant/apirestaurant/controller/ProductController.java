@@ -1,5 +1,6 @@
 package com.restaurant.apirestaurant.controller;
 
+import com.restaurant.apirestaurant.entity.Unit;
 import com.restaurant.apirestaurant.model.CategoriesRequest;
 import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
@@ -35,7 +36,10 @@ public class ProductController {
     /**
      * Membuat produk baru dengan informasi yang diberikan dan menyimpannya ke dalam sistem.
      *
-     * @param nameProduct   Nama produk.
+     * @param units         Daftar unit produk.
+     * @param title         Judul produk.
+     * @param rating        Rating produk.
+     * @param discount      Diskon produk.
      * @param price         Harga produk.
      * @param qty           Jumlah produk yang tersedia.
      * @param description   Deskripsi produk.
@@ -46,7 +50,11 @@ public class ProductController {
      */
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> create(
-            @RequestParam String nameProduct,
+            @RequestParam List<String> units,
+            @RequestParam String id,
+            @RequestParam String title,
+            @RequestParam BigDecimal rating,
+            @RequestParam BigDecimal discount,
             @RequestParam BigDecimal price,
             @RequestParam Integer qty,
             @RequestParam String description,
@@ -58,7 +66,11 @@ public class ProductController {
 
         // Salin atribut lainnya
         ProductRequest request = new ProductRequest();
-        request.setNameProduct(nameProduct);
+        List<Unit> unitsList = units.stream().map(Unit::valueOf).toList();
+        request.setUnits(unitsList);
+        request.setTitle(title);
+        request.setRating(rating);
+        request.setDiscount(discount);
         request.setPrice(price);
         request.setQty(qty);
         request.setDescription(description);
@@ -80,8 +92,11 @@ public class ProductController {
     /**
      * Memperbarui produk yang ada.
      *
+     * @param units       Daftar unit yang diperbarui
      * @param id          ID produk yang akan diperbarui.
-     * @param nameProduct Nama baru untuk produk.
+     * @param title       Title baru untuk produk.
+     * @param rating      Rating baru untuk produk.
+     * @param discount    Diskon baru untuk produk.
      * @param price       Harga baru untuk produk.
      * @param qty         Jumlah baru untuk produk.
      * @param description Deskripsi baru untuk produk.
@@ -92,8 +107,11 @@ public class ProductController {
      */
     @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> update(
+            @RequestParam List<String> units,
             @RequestParam String id,
-            @RequestParam String nameProduct,
+            @RequestParam String title,
+            @RequestParam BigDecimal rating,
+            @RequestParam BigDecimal discount,
             @RequestParam BigDecimal price,
             @RequestParam Integer qty,
             @RequestParam String description,
@@ -104,7 +122,12 @@ public class ProductController {
         fileStorageService.saveImageToServer(file);
 
         ProductRequest request = new ProductRequest();
-        request.setNameProduct(nameProduct);
+
+        List<Unit> unitsList = units.stream().map(Unit::valueOf).toList();
+        request.setUnits(unitsList);
+        request.setTitle(title);
+        request.setRating(rating);
+        request.setDiscount(discount);
         request.setPrice(price);
         request.setQty(qty);
         request.setDescription(description);
@@ -166,12 +189,12 @@ public class ProductController {
     /**
      * Menemukan produk berdasarkan nama produk.
      *
-     * @param nameProduct Nama produk yang akan ditemukan.
+     * @param title Judul produk yang akan ditemukan.
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang ditemukan.
      */
-    @GetMapping(path = "/find/{nameProduct}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ProductResponse> findByNameProduct(@PathVariable String nameProduct) {
-        ProductResponse response = productService.findByNameProduct(nameProduct);
+    @GetMapping(path = "/find/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductResponse> findByTitle(@PathVariable String title) {
+        ProductResponse response = productService.findByTitle(title);
         return ResponseEntity.ok().body(response);
     }
 

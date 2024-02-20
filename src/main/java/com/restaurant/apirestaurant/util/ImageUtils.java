@@ -11,6 +11,11 @@ import java.util.zip.Inflater;
 
 public class ImageUtils {
 
+    /**
+     * Mengompresi gambar menjadi array byte[]
+     * @param data Data dari gambar dalam bentuk array byte[]
+     * @return Data gambar yang telah dikompresi dalam bentuk array byte[]
+     */
     public static byte[] compressImage(byte[] data) {
         Deflater deflater = new Deflater();
         deflater.setLevel(Deflater.BEST_COMPRESSION);
@@ -30,6 +35,11 @@ public class ImageUtils {
         return outputStream.toByteArray();
     }
 
+    /**
+     * Mendekompresi gambar dari array byte[]
+     * @param data Data gambar yang dikompresi dalam bentuk array byte[]
+     * @return Data gambar yang telah dikompresi dalam bentuk array byte[]
+     */
     public static byte[] decompressImage(byte[] data) {
         Inflater inflater = new Inflater();
         inflater.setInput(data);

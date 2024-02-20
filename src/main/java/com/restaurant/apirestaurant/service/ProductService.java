@@ -2,6 +2,7 @@ package com.restaurant.apirestaurant.service;
 
 import com.restaurant.apirestaurant.entity.Categories;
 import com.restaurant.apirestaurant.entity.Product;
+import com.restaurant.apirestaurant.entity.Unit;
 import com.restaurant.apirestaurant.model.CategoriesRequest;
 import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
@@ -63,7 +64,10 @@ public class ProductService {
             Blob imageDataBlob = ImageUtils.byteArrayToBlob(imageData);
 
             Product product = new Product();
-            product.setNameProduct(request.getNameProduct());
+            product.setUnits(request.getUnits());
+            product.setTitle(request.getTitle());
+            product.setRating(request.getRating());
+            product.setDiscount(request.getDiscount());
             product.setPrice(request.getPrice());
             product.setQty(request.getQty());
             product.setDescription(request.getDescription());
@@ -119,10 +123,32 @@ public class ProductService {
                 product.setImageData(imageDataBlob);
             }
 
-            product.setNameProduct(request.getNameProduct());
-            product.setPrice(request.getPrice());
-            product.setQty(request.getQty());
-            product.setDescription(request.getDescription());
+            if (request.getRating() != null) {
+                product.setRating(request.getRating());
+            }
+            if (request.getDiscount() != null) {
+                product.setDiscount(request.getDiscount());
+            }
+
+            if (request.getUnits() != null) {
+                product.setUnits(request.getUnits());
+            }
+
+            if (request.getTitle() != null) {
+                product.setTitle(request.getTitle());
+            }
+
+            if (request.getPrice() != null) {
+                product.setPrice(request.getPrice());
+            }
+
+            if (request.getQty() != null) {
+                product.setQty(request.getQty());
+            }
+
+            if (request.getDescription() != null) {
+                product.setDescription(request.getDescription());
+            }
 
             List<CategoriesRequest> categoriesRequestList = request.getCategories();
             List<Categories> categoriesList = new ArrayList<>();
@@ -134,7 +160,10 @@ public class ProductService {
                     throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " tidak ditemukan!");
                 }
             }
-            product.setCategories(categoriesList);
+
+            if (categoriesList.size() > 0) {
+                product.setCategories(categoriesList);
+            }
 
             productRepository.save(product);
 
@@ -184,13 +213,13 @@ public class ProductService {
     /**
      * Finds a product by its name
      *
-     * @param nameProduct
+     * @param title
      * @return
      */
     @Transactional(readOnly = true)
-    public ProductResponse findByNameProduct(String nameProduct) {
-        Product product = productRepository.findByNameProduct(nameProduct)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Name : " + nameProduct + " Not Found!"));
+    public ProductResponse findByTitle(String title) {
+        Product product = productRepository.findByTitle(title)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Name : " + title + " Not Found!"));
 
         return toProductResponse(product);
     }
@@ -210,6 +239,13 @@ public class ProductService {
         return products.stream().map(this::toProductResponse).collect(Collectors.toList());
     }
 
+    /**
+     *
+     * @param imageName
+     * @param imageData
+     * @return
+     * @throws IOException
+     */
     private String saveImageAndGetUrl(String imageName, Blob imageData) throws IOException {
         String folderPath = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
         File folder = new File(folderPath);
@@ -242,6 +278,12 @@ public class ProductService {
         return "http://192.168.1.3:2000/image/upload/" + uniqueFileName;
     }
 
+    /**
+     *
+     * @param blob
+     * @return
+     * @throws SQLException
+     */
     private byte[] blobToByteArray(Blob blob) throws SQLException {
         try (InputStream inputStream = blob.getBinaryStream()) {
             return inputStream.readAllBytes();
@@ -251,6 +293,11 @@ public class ProductService {
         }
     }
 
+    /**
+     *
+     * @param imageId
+     * @return
+     */
     @Transactional(readOnly = true)
     public byte[] getImageDataById(String imageId) {
         try {
@@ -286,8 +333,11 @@ public class ProductService {
         }
 
         return ProductResponse.builder()
+                .units(product.getUnits().stream().map(Unit::toString).toList())
                 .id(product.getId())
-                .nameProduct(product.getNameProduct())
+                .title(product.getTitle())
+                .rating(product.getRating())
+                .discount(product.getDiscount())
                 .price(product.getPrice())
                 .qty(product.getQty())
                 .description(product.getDescription())
