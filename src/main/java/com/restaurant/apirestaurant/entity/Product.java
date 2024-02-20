@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.math.BigDecimal;
+import java.sql.Blob;
 import java.util.List;
 
 @Data
@@ -47,6 +48,6 @@ public class Product {
     private String imageType;
 
     @Lob
-    @Column(name = "image_data")
-    private byte[] imageData;
+    @Column(name = "image_data", length = 1000)
+    private Blob imageData;
 }

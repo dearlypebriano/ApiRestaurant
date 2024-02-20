@@ -7,6 +7,7 @@ import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
 import com.restaurant.apirestaurant.repository.CategoriesRepository;
 import com.restaurant.apirestaurant.repository.ProductRepository;
+import com.restaurant.apirestaurant.util.ImageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,18 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Kelas ini menyediakan layanan untuk mengelola produk.
+ * Service class for managing products.
  */
 @Service
 public class ProductService {
@@ -40,111 +41,101 @@ public class ProductService {
     private CategoriesRepository categoriesRepository;
 
     /**
-     * Membuat produk baru.
-     *
-     * @param request Objek ProductRequest yang berisi informasi produk yang akan dibuat.
-     * @param file    Berkas gambar untuk produk.
-     * @return Objek ProductResponse yang berisi informasi produk yang telah dibuat.
-     * @throws IOException jika terjadi kesalahan saat membaca atau menyimpan gambar.
+     * Create a new product along with uploading an image.
+     * @param request The product details.
+     * @param file The image file to upload.
+     * @return The created product response.
+     * @throws RuntimeException if an error occurs while creating the product or uploading the image.
      */
     @Transactional
-    public ProductResponse createProduct(ProductRequest request, MultipartFile file) throws IOException {
-        String hashedFileName = hashFileName(file.getOriginalFilename());
+    public ProductResponse createProduct(ProductRequest request, MultipartFile file) {
+        try {
+            String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
+            byte[] imageData = ImageUtils.compressImage(file.getBytes());
+            Blob imageDataBlob = ImageUtils.byteArrayToBlob(imageData);
 
-        Product product = new Product();
-        product.setNameProduct(request.getNameProduct());
-        product.setPrice(request.getPrice());
-        product.setQty(request.getQty());
-        product.setDescription(request.getDescription());
-
-        List<CategoriesRequest> categoriesRequestList = request.getCategories();
-        List<Categories> categoriesList = new ArrayList<>();
-
-        for (CategoriesRequest categoriesRequest : categoriesRequestList) {
-            Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
-            if (existingCategory != null) {
-                categoriesList.add(existingCategory);
-            } else {
-                throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " not found!");
-            }
-        }
-        product.setCategories(categoriesList);
-
-        saveImage(file, hashedFileName);
-        product.setImageName(hashedFileName);
-        product.setImageType(file.getContentType());
-        product.setImageData(file.getBytes());
-
-        productRepository.save(product);
-
-        return toProductResponse(product);
-    }
-
-    /**
-     * Memperbarui produk yang ada.
-     *
-     * @param id      ID produk yang akan diperbarui.
-     * @param request Objek ProductRequest yang berisi informasi produk yang baru.
-     * @param file    Berkas gambar baru untuk produk (opsional).
-     * @return Objek ProductResponse yang berisi informasi produk yang telah diperbarui.
-     * @throws IOException jika terjadi kesalahan saat membaca atau menyimpan gambar.
-     */
-    @Transactional
-    public ProductResponse update(String id, ProductRequest request, MultipartFile file) throws IOException {
-        String hashedFileName = hashFileName(file.getOriginalFilename());
-
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With ID : " + id + " Not Found!"));
-
-        if (product.getNameProduct() != null) {
+            Product product = new Product();
             product.setNameProduct(request.getNameProduct());
-        }
-
-        if (product.getPrice() != null) {
             product.setPrice(request.getPrice());
-        }
-
-        if (product.getQty() != null) {
             product.setQty(request.getQty());
-        }
-
-        if (product.getDescription() != null) {
             product.setDescription(request.getDescription());
-        }
 
-        List<CategoriesRequest> categoriesRequestList = request.getCategories();
-        List<Categories> categoriesList = new ArrayList<>();
-
-        for (CategoriesRequest categoriesRequest : categoriesRequestList) {
-            Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
-            if (existingCategory != null) {
-                categoriesList.add(existingCategory);
-            } else {
-                throw new RuntimeException("Category " + categoriesRequest.getNameCategory() + " not found!");
+            List<CategoriesRequest> categoriesRequestList = request.getCategories();
+            List<Categories> categoriesList = new ArrayList<>();
+            for (CategoriesRequest categoriesRequest : categoriesRequestList) {
+                Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
+                if (existingCategory != null) {
+                    categoriesList.add(existingCategory);
+                } else {
+                    throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " tidak ditemukan!");
+                }
             }
-        }
-
-        if (product.getCategories() != null) {
             product.setCategories(categoriesList);
-        }
 
-        if (file != null) {
-            saveImage(file, hashedFileName);
             product.setImageName(hashedFileName);
             product.setImageType(file.getContentType());
-            product.setImageData(file.getBytes());
+            product.setImageData(imageDataBlob);
+
+            productRepository.save(product);
+
+            return toProductResponse(product);
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException("Gagal menyimpan produk: " + e.getMessage());
         }
-
-        productRepository.save(product);
-
-        return toProductResponse(product);
     }
 
     /**
-     * Menghapus produk berdasarkan ID.
-     *
-     * @param id ID produk yang akan dihapus.
+     * Update an existing product along with updating the image.
+     * @param productId The ID of the product to update.
+     * @param request The updated product details.
+     * @param file The updated image file, if any.
+     * @return The updated product response.
+     * @throws RuntimeException if an error occurs while updating the product or uploading the image.
      */
+    @Transactional
+    public ProductResponse updateProduct(String productId, ProductRequest request, MultipartFile file) {
+        try {
+            String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
+            byte[] imageData = ImageUtils.compressImage(file.getBytes());
+            Blob imageDataBlob = ImageUtils.byteArrayToBlob(imageData);
+
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product dengan ID : " + productId + " tidak ditemukan!"));
+
+            if (file != null && !file.isEmpty()) {
+                hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
+                imageData = ImageUtils.compressImage(file.getBytes());
+
+                product.setImageName(hashedFileName);
+                product.setImageType(file.getContentType());
+                product.setImageData(imageDataBlob);
+            }
+
+            product.setNameProduct(request.getNameProduct());
+            product.setPrice(request.getPrice());
+            product.setQty(request.getQty());
+            product.setDescription(request.getDescription());
+
+            List<CategoriesRequest> categoriesRequestList = request.getCategories();
+            List<Categories> categoriesList = new ArrayList<>();
+            for (CategoriesRequest categoriesRequest : categoriesRequestList) {
+                Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
+                if (existingCategory != null) {
+                    categoriesList.add(existingCategory);
+                } else {
+                    throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " tidak ditemukan!");
+                }
+            }
+            product.setCategories(categoriesList);
+
+            productRepository.save(product);
+
+            return toProductResponse(product);
+        } catch (IOException | SQLException e) {
+            throw new RuntimeException("Gagal mengupdate produk: " + e.getMessage());
+        }
+    }
+
     @Transactional
     public void delete(String id) {
         Product product = productRepository.findById(id)
@@ -154,10 +145,10 @@ public class ProductService {
     }
 
     /**
-     * Mencari produk berdasarkan ID.
+     * Finds a product by its ID
      *
-     * @param id ID produk yang akan dicari.
-     * @return Objek ProductResponse yang berisi informasi produk yang ditemukan.
+     * @param  id   the ID of the product to find
+     * @return      a response containing the product details
      */
     @Transactional(readOnly = true)
     public ProductResponse findById(String id) {
@@ -168,11 +159,11 @@ public class ProductService {
     }
 
     /**
-     * Mengambil daftar produk dengan pembatasan halaman dan jumlah item per halaman.
+     * Finds all products with Pageable
      *
-     * @param page Nomor halaman (dimulai dari 0).
-     * @param size Jumlah item per halaman.
-     * @return Halaman dari daftar produk.
+     * @param page
+     * @param size
+     * @return
      */
     @Transactional(readOnly = true)
     public Page<ProductResponse> findAll(int page, int size) {
@@ -183,10 +174,10 @@ public class ProductService {
     }
 
     /**
-     * Mencari produk berdasarkan nama produk.
+     * Finds a product by its name
      *
-     * @param nameProduct Nama produk yang akan dicari.
-     * @return Objek ProductResponse yang berisi informasi produk yang ditemukan.
+     * @param nameProduct
+     * @return
      */
     @Transactional(readOnly = true)
     public ProductResponse findByNameProduct(String nameProduct) {
@@ -197,10 +188,10 @@ public class ProductService {
     }
 
     /**
-     * Mencari produk berdasarkan harga.
+     * Finds a product by its price
      *
-     * @param price Harga produk yang akan dicari.
-     * @return Daftar objek ProductResponse yang berisi informasi produk yang ditemukan.
+     * @param price
+     * @return
      */
     @Transactional(readOnly = true)
     public List<ProductResponse> findByPrice(BigDecimal price) {
@@ -212,55 +203,23 @@ public class ProductService {
     }
 
     /**
-     * Menghasilkan hash dari nama file gambar.
+     * Converts a Product object to a ProductResponse object
      *
-     * @param originalFileName Nama asli file gambar.
-     * @return Nama file gambar yang telah di-hash.
-     */
-    private String hashFileName(String originalFileName) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            md.update(originalFileName.getBytes());
-            byte[] digest = md.digest();
-            StringBuilder hashedFileName = new StringBuilder();
-            for (byte b : digest) {
-                hashedFileName.append(String.format("%02x", b));
-            }
-            return hashedFileName.toString();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Menyimpan gambar ke folder yang ditentukan.
-     *
-     * @param file          Berkas gambar.
-     * @param hashedFileName Nama file gambar yang telah di-hash.
-     * @throws IOException jika terjadi kesalahan saat menyimpan gambar.
-     */
-    private void saveImage(MultipartFile file, String hashedFileName) throws IOException {
-        String folderPath = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
-        File folder = new File(folderPath);
-        if (!folder.exists()) {
-            folder.mkdirs(); // Buat direktori jika belum ada
-        }
-
-        File imageFile = new File(folder, hashedFileName);
-        try (FileOutputStream fos = new FileOutputStream(imageFile)) {
-            fos.write(file.getBytes());
-        }
-    }
-
-    /**
-     * Mengonversi objek Product menjadi objek ProductResponse.
-     *
-     * @param product Objek Product yang akan dikonversi.
-     * @return Objek ProductResponse yang dihasilkan.
+     * @param product
+     * @return
      */
     private ProductResponse toProductResponse(Product product) {
         List<Categories> categories = product.getCategories();
+        byte[] imageData = null;
+
+        try {
+            Blob blob = product.getImageData();
+            if (blob != null) {
+                imageData = blobToByteArray(blob);
+            }
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+        }
 
         return ProductResponse.builder()
                 .id(product.getId())
@@ -271,7 +230,27 @@ public class ProductService {
                 .categories(categories.stream().map(Categories::getNameCategory).toList())
                 .imageName(product.getImageName())
                 .imageType(product.getImageType())
-                .imageData(product.getImageData())
+                .imageData(imageData)
                 .build();
+    }
+
+    /**
+     * Converts a Blob object to a byte array
+     *
+     * @param blob
+     * @return
+     * @throws SQLException
+     * @throws IOException
+     */
+    private byte[] blobToByteArray(Blob blob) throws SQLException, IOException {
+        try (InputStream inputStream = blob.getBinaryStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[4096];
+            int bytesRead = -1;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            return outputStream.toByteArray();
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.restaurant.apirestaurant.controller;
 import com.restaurant.apirestaurant.model.CategoriesRequest;
 import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
+import com.restaurant.apirestaurant.service.FileStorageService;
 import com.restaurant.apirestaurant.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -14,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.Base64;
 import java.util.List;
 
 /**
@@ -25,6 +28,9 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * Membuat produk baru dengan informasi yang diberikan dan menyimpannya ke dalam sistem.
@@ -46,7 +52,11 @@ public class ProductController {
             @RequestParam String description,
             @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
-    ) throws IOException {
+    ) throws IOException, SQLException {
+
+        fileStorageService.saveImageToServer(file);
+
+        // Salin atribut lainnya
         ProductRequest request = new ProductRequest();
         request.setNameProduct(nameProduct);
         request.setPrice(price);
@@ -89,7 +99,10 @@ public class ProductController {
             @RequestParam String description,
             @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
-    ) throws IOException {
+    ) throws IOException, SQLException {
+
+        fileStorageService.saveImageToServer(file);
+
         ProductRequest request = new ProductRequest();
         request.setNameProduct(nameProduct);
         request.setPrice(price);
@@ -106,7 +119,7 @@ public class ProductController {
 
         request.setCategories(categoriesRequestList);
 
-        ProductResponse response = productService.update(id, request, file);
+        ProductResponse response = productService.updateProduct(id, request, file);
         return ResponseEntity.ok().body(response);
     }
 
