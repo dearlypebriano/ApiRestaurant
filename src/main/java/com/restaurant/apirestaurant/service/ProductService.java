@@ -9,6 +9,7 @@ import com.restaurant.apirestaurant.repository.CategoriesRepository;
 import com.restaurant.apirestaurant.repository.ProductRepository;
 import com.restaurant.apirestaurant.util.ImageUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +41,12 @@ public class ProductService {
 
     @Autowired
     private CategoriesRepository categoriesRepository;
+
+    @Value("${image.upload.path}") // Path folder tempat gambar disimpan
+    private String imageUploadPath;
+
+    @Value("${image.endpoint.url}") // URL endpoint gambar
+    private String imageEndpointUrl;
 
     /**
      * Create a new product along with uploading an image.
@@ -202,6 +210,47 @@ public class ProductService {
         return products.stream().map(this::toProductResponse).collect(Collectors.toList());
     }
 
+    private String saveImageAndGetUrl(String imageName, Blob imageData) throws IOException {
+        String folderPath = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
+        File folder = new File(folderPath);
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+
+        // Buat nama file yang unik dengan UUID
+        String uniqueFileName = UUID.randomUUID().toString();
+        String filePath = folderPath + uniqueFileName;
+
+        // Konversi blob menjadi byte array
+        byte[] imageBytes;
+        try (InputStream inputStream = imageData.getBinaryStream()) {
+            imageBytes = inputStream.readAllBytes();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new IOException("Failed to read image data from Blob", e);
+        }
+
+        // Simpan byte array sebagai file gambar
+        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
+            outputStream.write(imageBytes);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new IOException("Failed to save image file", e);
+        }
+
+        // Kembalikan URL gambar
+        return "http://0.0.0.0:2000/image/upload/" + uniqueFileName;
+    }
+
+    private byte[] blobToByteArray(Blob blob) throws SQLException {
+        try (InputStream inputStream = blob.getBinaryStream()) {
+            return inputStream.readAllBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new SQLException("Failed to convert Blob to byte array", e);
+        }
+    }
+
     /**
      * Converts a Product object to a ProductResponse object
      *
@@ -210,14 +259,13 @@ public class ProductService {
      */
     private ProductResponse toProductResponse(Product product) {
         List<Categories> categories = product.getCategories();
-        byte[] imageData = null;
+        String imageUrl = null;
+        byte[] imageDataBytes = null;
 
         try {
-            Blob blob = product.getImageData();
-            if (blob != null) {
-                imageData = blobToByteArray(blob);
-            }
-        } catch (SQLException | IOException e) {
+            imageUrl = saveImageAndGetUrl(product.getImageName(), product.getImageData());
+            imageDataBytes = blobToByteArray(product.getImageData());
+        } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
 
@@ -230,27 +278,8 @@ public class ProductService {
                 .categories(categories.stream().map(Categories::getNameCategory).toList())
                 .imageName(product.getImageName())
                 .imageType(product.getImageType())
-                .imageData(imageData)
+                .imageData(imageDataBytes) // Tetap menyimpan imageData
+                .imageUrl(imageUrl) // Gunakan URL gambar
                 .build();
-    }
-
-    /**
-     * Converts a Blob object to a byte array
-     *
-     * @param blob
-     * @return
-     * @throws SQLException
-     * @throws IOException
-     */
-    private byte[] blobToByteArray(Blob blob) throws SQLException, IOException {
-        try (InputStream inputStream = blob.getBinaryStream();
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead = -1;
-            while ((bytesRead = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, bytesRead);
-            }
-            return outputStream.toByteArray();
-        }
     }
 }

@@ -170,7 +170,7 @@ public class ProductController {
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang ditemukan.
      */
     @GetMapping(path = "/find/{nameProduct}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ProductResponse> findByNameProduct(@RequestParam String nameProduct) {
+    public ResponseEntity<ProductResponse> findByNameProduct(@PathVariable String nameProduct) {
         ProductResponse response = productService.findByNameProduct(nameProduct);
         return ResponseEntity.ok().body(response);
     }
@@ -182,7 +182,7 @@ public class ProductController {
      * @return ResponseEntity yang berisi daftar objek ProductResponse dari produk dengan harga yang sesuai.
      */
     @GetMapping(path = "/find/{price}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ProductResponse>> findByPrice(@RequestParam BigDecimal price) {
+    public ResponseEntity<List<ProductResponse>> findByPrice(@PathVariable BigDecimal price) {
         List<ProductResponse> response = productService.findByPrice(price);
         return ResponseEntity.ok().body(response);
     }
