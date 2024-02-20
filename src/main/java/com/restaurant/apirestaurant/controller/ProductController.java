@@ -1,10 +1,12 @@
 package com.restaurant.apirestaurant.controller;
 
+import com.restaurant.apirestaurant.model.CategoriesRequest;
 import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
 import com.restaurant.apirestaurant.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,37 +27,85 @@ public class ProductController {
     private ProductService productService;
 
     /**
-     * Membuat produk baru.
+     * Membuat produk baru dengan informasi yang diberikan dan menyimpannya ke dalam sistem.
      *
-     * @param request Objek ProductRequest yang berisi informasi produk yang akan dibuat.
-     * @param file    Berkas gambar untuk produk.
-     * @return ResponseEntity yang berisi objek ProductResponse dari produk yang berhasil dibuat.
-     * @throws IOException jika terjadi kesalahan saat membaca atau menyimpan gambar.
+     * @param nameProduct   Nama produk.
+     * @param price         Harga produk.
+     * @param qty           Jumlah produk yang tersedia.
+     * @param description   Deskripsi produk.
+     * @param categories    Daftar kategori produk.
+     * @param file          File gambar produk.
+     * @return Objek ResponseEntity yang berisi informasi produk yang baru dibuat.
+     * @throws IOException jika terjadi kesalahan saat memproses file.
      */
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> create(
-            @RequestParam ProductRequest request,
+            @RequestParam String nameProduct,
+            @RequestParam BigDecimal price,
+            @RequestParam Integer qty,
+            @RequestParam String description,
+            @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
+        ProductRequest request = new ProductRequest();
+        request.setNameProduct(nameProduct);
+        request.setPrice(price);
+        request.setQty(qty);
+        request.setDescription(description);
+
+        List<CategoriesRequest> categoriesRequestList = categories.stream()
+                .map(categoryName -> {
+                    CategoriesRequest categoryRequest = new CategoriesRequest();
+                    categoryRequest.setNameCategory(categoryName);
+                    return categoryRequest;
+                })
+                .toList();
+
+        request.setCategories(categoriesRequestList);
+
         ProductResponse response = productService.createProduct(request, file);
-        return ResponseEntity.created(null).body(response);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     /**
      * Memperbarui produk yang ada.
      *
-     * @param id      ID produk yang akan diperbarui.
-     * @param request Objek ProductRequest yang berisi informasi produk yang baru.
-     * @param file    Berkas gambar baru untuk produk (opsional).
+     * @param id          ID produk yang akan diperbarui.
+     * @param nameProduct Nama baru untuk produk.
+     * @param price       Harga baru untuk produk.
+     * @param qty         Jumlah baru untuk produk.
+     * @param description Deskripsi baru untuk produk.
+     * @param categories  Daftar kategori baru untuk produk.
+     * @param file        Berkas gambar baru untuk produk (opsional).
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang berhasil diperbarui.
      * @throws IOException jika terjadi kesalahan saat membaca atau menyimpan gambar.
      */
     @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> update(
             @RequestParam String id,
-            @RequestParam ProductRequest request,
+            @RequestParam String nameProduct,
+            @RequestParam BigDecimal price,
+            @RequestParam Integer qty,
+            @RequestParam String description,
+            @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
+        ProductRequest request = new ProductRequest();
+        request.setNameProduct(nameProduct);
+        request.setPrice(price);
+        request.setQty(qty);
+        request.setDescription(description);
+
+        List<CategoriesRequest> categoriesRequestList = categories.stream()
+                .map(categoryName -> {
+                    CategoriesRequest categoryRequest = new CategoriesRequest();
+                    categoryRequest.setNameCategory(categoryName);
+                    return categoryRequest;
+                })
+                .toList();
+
+        request.setCategories(categoriesRequestList);
+
         ProductResponse response = productService.update(id, request, file);
         return ResponseEntity.ok().body(response);
     }

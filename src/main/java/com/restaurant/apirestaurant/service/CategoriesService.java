@@ -31,8 +31,8 @@ public class CategoriesService {
         Categories categories = new Categories();
         categories.setNameCategory(categoriesRequest.getNameCategory());
 
-        Categories savedCategories = categoriesRepository.save(categories);
-        return toCategoriesResponse(savedCategories);
+        categoriesRepository.save(categories);
+        return toCategoriesResponse(categories);
     }
 
     /**
