@@ -23,8 +23,8 @@ public class CategoriesController {
      * @return
      */
     @PostMapping(path = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CategoriesResponse> create(@RequestParam CategoriesRequest nameCategory) {
-        CategoriesResponse categoriesResponse = categoriesService.createCategories(nameCategory);
+    public ResponseEntity<CategoriesResponse> create(@RequestPart CategoriesRequest request) {
+        CategoriesResponse categoriesResponse = categoriesService.createCategories(request);
         return new ResponseEntity<>(categoriesResponse, HttpStatus.CREATED);
     }
 
