@@ -34,7 +34,7 @@ public class ProductController {
      */
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> create(
-            @RequestPart ProductRequest request,
+            @RequestParam ProductRequest request,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
         ProductResponse response = productService.createProduct(request, file);
@@ -53,7 +53,7 @@ public class ProductController {
     @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> update(
             @RequestParam String id,
-            @RequestPart ProductRequest request,
+            @RequestParam ProductRequest request,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
         ProductResponse response = productService.update(id, request, file);
