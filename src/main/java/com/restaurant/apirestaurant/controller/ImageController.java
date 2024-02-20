@@ -22,11 +22,18 @@ import java.nio.file.Paths;
 @RequestMapping("/api/images")
 public class ImageController {
 
-    private static final String IMAGE_FOLDER = "C:/Users/dearl/Documents/ApiRestaurant/src/main/resources/static/image/upload/";
+    private static final String IMAGE_FOLDER = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
 
     @Autowired
     private ProductService productService;
 
+    /**
+     * Mengambil gambar
+     * 
+     * @param imageName
+     * @return
+     * @throws IOException
+     */
     @GetMapping("/{imageName}")
     public ResponseEntity<Resource> getImage(@PathVariable String imageName) throws IOException {
         Path imagePath = Paths.get(IMAGE_FOLDER + imageName);
