@@ -239,7 +239,7 @@ public class ProductService {
         }
 
         // Kembalikan URL gambar
-        return "http://0.0.0.0:2000/image/upload/" + uniqueFileName;
+        return "http://192.168.1.3:2000/image/upload/" + uniqueFileName;
     }
 
     private byte[] blobToByteArray(Blob blob) throws SQLException {
