@@ -25,6 +25,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Kelas ini menyediakan layanan untuk mengelola produk.
@@ -199,14 +200,15 @@ public class ProductService {
      * Mencari produk berdasarkan harga.
      *
      * @param price Harga produk yang akan dicari.
-     * @return Objek ProductResponse yang berisi informasi produk yang ditemukan.
+     * @return Daftar objek ProductResponse yang berisi informasi produk yang ditemukan.
      */
     @Transactional(readOnly = true)
-    public ProductResponse findByPrice(BigDecimal price) {
-        Product product = productRepository.findByPrice(price)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Price : " + price + " Not Found!"));
-
-        return toProductResponse(product);
+    public List<ProductResponse> findByPrice(BigDecimal price) {
+        List<Product> products = productRepository.findAllByPrice(price);
+        if (products.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Products With Price : " + price + " Not Found!");
+        }
+        return products.stream().map(this::toProductResponse).collect(Collectors.toList());
     }
 
     /**
