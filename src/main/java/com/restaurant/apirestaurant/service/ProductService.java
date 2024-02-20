@@ -65,7 +65,7 @@ public class ProductService {
             if (existingCategory != null) {
                 categoriesList.add(existingCategory);
             } else {
-                throw new RuntimeException("Category " + categoriesRequest.getNameCategory() + " not found!");
+                throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " not found!");
             }
         }
         product.setCategories(categoriesList);
