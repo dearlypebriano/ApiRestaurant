@@ -84,7 +84,7 @@ public class ProductService {
         Path imagePath = Paths.get(uploadPath, hashedFileName);
         Files.write(imagePath, imageData);
 
-        product.setImageName(originalFileName); // Simpan nama asli untuk referensi
+        product.setImageName(hashedFileName); // Simpan nama asli untuk referensi
         product.setImageType(file.getContentType());
         product.setImageData(imageDatas);
         product.setFilePath(imagePath.toString()); // Simpan path lengkap dari file gambar

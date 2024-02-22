@@ -28,9 +28,6 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
-    @Autowired
-    private FileStorageService fileStorageService;
-
     /**
      * Metode ini digunakan untuk membuat produk baru
      * @param units parameters ini digunakan untuk menentukan unit produk
@@ -75,6 +72,9 @@ public class ProductController {
         request.setCategories(categoriesRequestList);
 
         ProductResponse response = productService.createProduct(request, file);
+        String imageName = response.getImageName();
+        String imageUrl = "http://192.168.1.3:2000/api/images/" + imageName;
+        response.setFilePath(imageUrl);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
