@@ -23,6 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +41,8 @@ public class ProductService {
     @Autowired
     private CategoriesRepository categoriesRepository;
 
-    @Value("${image.upload.path}") // Path folder tempat gambar disimpan
-    private String imageUploadPath;
-
-    @Value("${image.endpoint.url}") // URL endpoint gambar
-    private String imageEndpointUrl;
+    @Value("${file.upload.path}")
+    private String uploadPath;
 
     private final String FOLDER_PATH = "C:/Users/dearl/Documents/ApiRestaurant/src/main/resources/static/image/upload/";
 
@@ -57,9 +56,6 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(ProductRequest request, MultipartFile file) throws IOException {
-        String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
-        String filePath = FOLDER_PATH + hashedFileName;
-
         List<CategoriesRequest> categories = request.getCategories();
         List<Categories> categoryList = new ArrayList<>();
         for (CategoriesRequest categoriesRequest : categories) {
@@ -71,9 +67,7 @@ public class ProductService {
             }
         }
 
-        byte[] imageData = ImageUtils.compressImage(file.getBytes());
-
-        Product product = productRepository.save(Product.builder()
+        Product product = Product.builder()
                         .title(request.getTitle())
                         .rating(request.getRating())
                         .price(request.getPrice())
@@ -81,16 +75,24 @@ public class ProductService {
                         .description(request.getDescription())
                         .categories(categoryList)
                         .units(request.getUnits())
-                        .imageName(hashedFileName)
-                        .imageType(file.getContentType())
-                        .imageData(imageData)
-                        .filePath(filePath)
-                .build());
+                .build();
 
-        if (product != null) {
-            uploadImageToFileSystem(imageData, hashedFileName);
-        } else {
-            throw new RuntimeException("Gagal menyimpan data produk, cek kembali apakah input yang anda masukkan sudah sesuai!");
+        String originalFileName = file.getOriginalFilename();
+        String hashedFileName = ImageUtils.hashFileName(originalFileName);
+        byte[] imageData = file.getBytes();
+        Path imagePath = Paths.get(uploadPath, hashedFileName);
+        Files.write(imagePath, imageData);
+
+        product.setImageName(originalFileName); // Simpan nama asli untuk referensi
+        product.setImageType(file.getContentType());
+        product.setFilePath(imagePath.toString()); // Simpan path lengkap dari file gambar
+
+        // Simpan produk ke database
+        productRepository.save(product);
+
+
+        if (product == null) {
+            throw new RuntimeException("Produk gagal dibuat, periksa kembali request yang anda masukkan!");
         }
 
         return toProductResponse(product);
@@ -102,36 +104,10 @@ public class ProductService {
      * @return
      * @throws IOException
      */
-    public byte[] downloadImageFromFileSystem(String imageName) throws IOException {
-        Optional<Product> fileData = productRepository.findByImageName(imageName);
-        String filePath = fileData.get().getFilePath();
-        byte[] images = Files.readAllBytes(new File(filePath).toPath());
-        return images;
-    }
-
-    /**
-     *
-     * @param imageData
-     * @param imageName
-     * @return
-     * @throws IOException
-     */
-    public String uploadImageToFileSystem(byte[] imageData, String imageName) throws IOException {
-        String hashedName = ImageUtils.hashFileName(imageName);
-        String filePath = FOLDER_PATH + hashedName;
-
-        Product product = productRepository.save(Product.builder()
-                .imageName(hashedName)
-                .imageType("image/png")
-                .imageData(ImageUtils.compressImage(imageData))
-                .filePath(filePath)
-                .build());
-
-        if (product != null) {
-            return "File uploaded successfully" + hashedName;
-        } else {
-            return null;
-        }
+    @Transactional(readOnly = true)
+    public byte[] downloadImageFromFileSystem(String fileName) throws IOException {
+        Path imagePath = Paths.get(uploadPath, fileName);
+        return Files.readAllBytes(imagePath);
     }
 
     /**

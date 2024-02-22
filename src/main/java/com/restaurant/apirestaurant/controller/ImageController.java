@@ -16,21 +16,17 @@ import java.io.IOException;
 @RequestMapping("/api/images")
 public class ImageController {
 
-
     @Autowired
     private ProductService productService;
 
     /**
-     *
-     * @param imageName parameter ini digunakan untuk mencari gambar pada path berdasarkan nama file
-     * @return
-     * @throws IOException
+     * Mengambil dan mengembalikan gambar dari sistem berdasarkan nama file.
+     * @param imageName Nama file gambar yang ingin diambil.
+     * @return Byte array yang mewakili konten gambar.
+     * @throws IOException Jika terjadi kesalahan saat membaca gambar.
      */
-    @GetMapping("/fileSystem/{imageName}")
-    public ResponseEntity<?> getImage(@PathVariable String imageName) throws IOException {
-        byte[] imageData = productService.downloadImageFromFileSystem(imageName);
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentType(MediaType.valueOf("image/png"))
-                .body(imageData);
+    @GetMapping(path = "/{imageName}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public byte[] downloadImageFromFileSystem(@PathVariable String imageName) throws IOException {
+        return productService.downloadImageFromFileSystem(imageName);
     }
 }

@@ -73,11 +73,17 @@ public class ImageUtils {
             md.update(originalFileName.getBytes());
             byte[] digest = md.digest();
             StringBuilder hashedFileName = new StringBuilder();
+
             for (byte b : digest) {
                 hashedFileName.append(String.format("%02x", b));
             }
 
-            return hashedFileName.toString() + extension;
+            // Jangan tambahkan ekstensi jika sudah ada di dalam nama file yang di-hash
+            if (!hashedFileName.toString().endsWith(extension)) {
+                hashedFileName.append(extension);
+            }
+
+            return hashedFileName.toString();
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             return null;
