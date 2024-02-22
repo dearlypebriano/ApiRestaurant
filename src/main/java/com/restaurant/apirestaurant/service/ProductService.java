@@ -56,6 +56,7 @@ public class ProductService {
      */
     @Transactional
     public ProductResponse createProduct(ProductRequest request, MultipartFile file) throws IOException {
+        byte[] imageDatas = file.getBytes();
         List<CategoriesRequest> categories = request.getCategories();
         List<Categories> categoryList = new ArrayList<>();
         for (CategoriesRequest categoriesRequest : categories) {
@@ -85,6 +86,7 @@ public class ProductService {
 
         product.setImageName(originalFileName); // Simpan nama asli untuk referensi
         product.setImageType(file.getContentType());
+        product.setImageData(imageDatas);
         product.setFilePath(imagePath.toString()); // Simpan path lengkap dari file gambar
 
         // Simpan produk ke database
