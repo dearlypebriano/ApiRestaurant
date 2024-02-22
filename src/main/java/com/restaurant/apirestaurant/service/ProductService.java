@@ -45,7 +45,7 @@ public class ProductService {
     @Value("${image.endpoint.url}") // URL endpoint gambar
     private String imageEndpointUrl;
 
-    private final String FOLDER_PATH = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
+    private final String FOLDER_PATH = "C:/Users/dearl/Documents/ApiRestaurant/src/main/resources/static/image/upload/";
 
     /**
      * Create a new product along with uploading an image.
