@@ -95,8 +95,8 @@ public class ProductController {
      */
     @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> update(
-            @RequestParam List<String> units,
             @PathVariable String id,
+            @RequestParam List<String> units,
             @RequestParam String title,
             @RequestParam BigDecimal rating,
             @RequestParam BigDecimal price,
@@ -125,8 +125,12 @@ public class ProductController {
         request.setCategories(categoriesRequestList);
 
         ProductResponse response = productService.updateProduct(id, request, file);
+        String imageName = response.getImageName();
+        String imageUrl = "http://192.168.1.3:2000/api/images/" + imageName;
+        response.setFilePath(imageUrl);
         return ResponseEntity.ok().body(response);
     }
+
 
     /**
      * Menghapus produk berdasarkan ID.

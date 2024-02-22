@@ -44,7 +44,7 @@ public class ProductService {
     @Value("${file.upload.path}")
     private String uploadPath;
 
-    private final String FOLDER_PATH = "C:/Users/dearl/Documents/ApiRestaurant/src/main/resources/static/image/upload/";
+    private final String IMAGE_URL = "http://192.168.1.3:2000/api/images/";
 
     /**
      * Create a new product along with uploading an image.
@@ -87,7 +87,7 @@ public class ProductService {
         product.setImageName(hashedFileName); // Simpan nama asli untuk referensi
         product.setImageType(file.getContentType());
         product.setImageData(imageDatas);
-        product.setFilePath(imagePath.toString()); // Simpan path lengkap dari file gambar
+        product.setFilePath(IMAGE_URL + hashedFileName); // Simpan path lengkap dari file gambar
 
         // Simpan produk ke database
         productRepository.save(product);
@@ -102,7 +102,7 @@ public class ProductService {
 
     /**
      *
-     * @param imageName
+     * @param fileName
      * @return
      * @throws IOException
      */
@@ -252,24 +252,6 @@ public class ProductService {
         }
         return products.stream().map(this::toProductResponse).toList();
     }
-
-    /**
-     * @param imageId
-     * @return
-     */
-    @Transactional(readOnly = true)
-    public byte[] getImageDataById(String imageId) {
-        Optional<Product> product = productRepository.findByImageName(imageId);
-
-        if (product != null) {
-            product.get().getImageName();
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image With Name: " + imageId + " Not Found!");
-        }
-
-        return product.get().getImageData();
-    }
-
 
     /**
      * Converts a Product object to a ProductResponse object
