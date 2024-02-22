@@ -33,8 +33,6 @@ public class Product {
 
     private BigDecimal rating;
 
-    private BigDecimal discount;
-
     private BigDecimal price;
 
     private Integer qty;
@@ -57,5 +55,8 @@ public class Product {
 
     @Lob
     @Column(name = "image_data", length = 1000)
-    private Blob imageData;
+    private byte[] imageData;
+
+    @Column(name = "image_path")
+    private String filePath;
 }

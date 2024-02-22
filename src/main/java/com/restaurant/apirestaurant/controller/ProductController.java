@@ -16,8 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -34,43 +32,34 @@ public class ProductController {
     private FileStorageService fileStorageService;
 
     /**
-     * Membuat produk baru dengan informasi yang diberikan dan menyimpannya ke dalam sistem.
-     *
-     * @param units         Daftar unit produk.
-     * @param title         Judul produk.
-     * @param rating        Rating produk.
-     * @param discount      Diskon produk.
-     * @param price         Harga produk.
-     * @param qty           Jumlah produk yang tersedia.
-     * @param description   Deskripsi produk.
-     * @param categories    Daftar kategori produk.
-     * @param file          File gambar produk.
-     * @return Objek ResponseEntity yang berisi informasi produk yang baru dibuat.
-     * @throws IOException jika terjadi kesalahan saat memproses file.
+     * Metode ini digunakan untuk membuat produk baru
+     * @param units parameters ini digunakan untuk menentukan unit produk
+     * @param title parameters ini digunakan untuk menentukan judul produk
+     * @param rating parameters ini digunakan untuk menentukan rating
+     * @param price parameters ini digunakan untuk menentukan harga produk
+     * @param qty parameters ini digunakan untuk menentukan quantity
+     * @param description parameters ini digunakan untuk menentukan deskripsi
+     * @param categories parameters ini digunakan untuk menentukan kategori
+     * @param file parameters ini digunakan untuk menentukan gambar
+     * @return
+     * @throws IOException
      */
     @PostMapping(value = "/create", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> create(
             @RequestParam List<String> units,
-            @RequestParam String id,
             @RequestParam String title,
             @RequestParam BigDecimal rating,
-            @RequestParam BigDecimal discount,
             @RequestParam BigDecimal price,
             @RequestParam Integer qty,
             @RequestParam String description,
             @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
-    ) throws IOException, SQLException {
-
-        fileStorageService.saveImageToServer(file);
-
-        // Salin atribut lainnya
+    ) throws IOException {
         ProductRequest request = new ProductRequest();
         List<Unit> unitsList = units.stream().map(Unit::valueOf).toList();
         request.setUnits(unitsList);
         request.setTitle(title);
         request.setRating(rating);
-        request.setDiscount(discount);
         request.setPrice(price);
         request.setQty(qty);
         request.setDescription(description);
@@ -96,7 +85,6 @@ public class ProductController {
      * @param id          ID produk yang akan diperbarui.
      * @param title       Title baru untuk produk.
      * @param rating      Rating baru untuk produk.
-     * @param discount    Diskon baru untuk produk.
      * @param price       Harga baru untuk produk.
      * @param qty         Jumlah baru untuk produk.
      * @param description Deskripsi baru untuk produk.
@@ -108,26 +96,20 @@ public class ProductController {
     @PatchMapping(path = "/update/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductResponse> update(
             @RequestParam List<String> units,
-            @RequestParam String id,
+            @PathVariable String id,
             @RequestParam String title,
             @RequestParam BigDecimal rating,
-            @RequestParam BigDecimal discount,
             @RequestParam BigDecimal price,
             @RequestParam Integer qty,
             @RequestParam String description,
             @RequestParam List<String> categories,
             @RequestPart("file") MultipartFile file
-    ) throws IOException, SQLException {
-
-        fileStorageService.saveImageToServer(file);
-
+    ) throws IOException {
         ProductRequest request = new ProductRequest();
-
         List<Unit> unitsList = units.stream().map(Unit::valueOf).toList();
         request.setUnits(unitsList);
         request.setTitle(title);
         request.setRating(rating);
-        request.setDiscount(discount);
         request.setPrice(price);
         request.setQty(qty);
         request.setDescription(description);
@@ -165,7 +147,7 @@ public class ProductController {
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang ditemukan.
      */
     @GetMapping(path = "/find/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ProductResponse> findById(@RequestParam String id) {
+    public ResponseEntity<ProductResponse> findById(@RequestParam String id) throws IOException {
         ProductResponse response = productService.findById(id);
         return ResponseEntity.ok().body(response);
     }

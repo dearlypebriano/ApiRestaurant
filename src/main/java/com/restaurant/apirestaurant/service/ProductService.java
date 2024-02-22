@@ -22,14 +22,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.Blob;
-import java.sql.SQLException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
  * Service class for managing products.
@@ -49,85 +45,121 @@ public class ProductService {
     @Value("${image.endpoint.url}") // URL endpoint gambar
     private String imageEndpointUrl;
 
+    private final String FOLDER_PATH = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
+
     /**
      * Create a new product along with uploading an image.
+     *
      * @param request The product details.
-     * @param file The image file to upload.
+     * @param file    The image file to upload.
      * @return The created product response.
      * @throws RuntimeException if an error occurs while creating the product or uploading the image.
      */
     @Transactional
-    public ProductResponse createProduct(ProductRequest request, MultipartFile file) {
-        try {
-            String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
-            byte[] imageData = ImageUtils.compressImage(file.getBytes());
-            Blob imageDataBlob = ImageUtils.byteArrayToBlob(imageData);
+    public ProductResponse createProduct(ProductRequest request, MultipartFile file) throws IOException {
+        String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
+        String filePath = FOLDER_PATH + hashedFileName;
 
-            Product product = new Product();
-            product.setUnits(request.getUnits());
-            product.setTitle(request.getTitle());
-            product.setRating(request.getRating());
-            product.setDiscount(request.getDiscount());
-            product.setPrice(request.getPrice());
-            product.setQty(request.getQty());
-            product.setDescription(request.getDescription());
-
-            List<CategoriesRequest> categoriesRequestList = request.getCategories();
-            List<Categories> categoriesList = new ArrayList<>();
-            for (CategoriesRequest categoriesRequest : categoriesRequestList) {
-                Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
-                if (existingCategory != null) {
-                    categoriesList.add(existingCategory);
-                } else {
-                    throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " tidak ditemukan!");
-                }
+        List<CategoriesRequest> categories = request.getCategories();
+        List<Categories> categoryList = new ArrayList<>();
+        for (CategoriesRequest categoriesRequest : categories) {
+            Categories existingCategory = categoriesRepository.findByNameCategory(categoriesRequest.getNameCategory());
+            if (existingCategory != null) {
+                categoryList.add(existingCategory);
+            } else {
+                throw new RuntimeException("Category dengan nama : " + categoriesRequest.getNameCategory() + " tidak ditemukan!");
             }
-            product.setCategories(categoriesList);
+        }
 
-            product.setImageName(hashedFileName);
-            product.setImageType(file.getContentType());
-            product.setImageData(imageDataBlob);
+        byte[] imageData = ImageUtils.compressImage(file.getBytes());
 
-            productRepository.save(product);
+        Product product = productRepository.save(Product.builder()
+                        .title(request.getTitle())
+                        .rating(request.getRating())
+                        .price(request.getPrice())
+                        .qty(request.getQty())
+                        .description(request.getDescription())
+                        .categories(categoryList)
+                        .units(request.getUnits())
+                        .imageName(hashedFileName)
+                        .imageType(file.getContentType())
+                        .imageData(imageData)
+                        .filePath(filePath)
+                .build());
 
-            return toProductResponse(product);
-        } catch (IOException | SQLException e) {
-            throw new RuntimeException("Gagal menyimpan produk: " + e.getMessage());
+        if (product != null) {
+            uploadImageToFileSystem(imageData, hashedFileName);
+        } else {
+            throw new RuntimeException("Gagal menyimpan data produk, cek kembali apakah input yang anda masukkan sudah sesuai!");
+        }
+
+        return toProductResponse(product);
+    }
+
+    /**
+     *
+     * @param imageName
+     * @return
+     * @throws IOException
+     */
+    public byte[] downloadImageFromFileSystem(String imageName) throws IOException {
+        Optional<Product> fileData = productRepository.findByImageName(imageName);
+        String filePath = fileData.get().getFilePath();
+        byte[] images = Files.readAllBytes(new File(filePath).toPath());
+        return images;
+    }
+
+    /**
+     *
+     * @param imageData
+     * @param imageName
+     * @return
+     * @throws IOException
+     */
+    public String uploadImageToFileSystem(byte[] imageData, String imageName) throws IOException {
+        String hashedName = ImageUtils.hashFileName(imageName);
+        String filePath = FOLDER_PATH + hashedName;
+
+        Product product = productRepository.save(Product.builder()
+                .imageName(hashedName)
+                .imageType("image/png")
+                .imageData(ImageUtils.compressImage(imageData))
+                .filePath(filePath)
+                .build());
+
+        if (product != null) {
+            return "File uploaded successfully" + hashedName;
+        } else {
+            return null;
         }
     }
 
     /**
      * Update an existing product along with updating the image.
+     *
      * @param productId The ID of the product to update.
-     * @param request The updated product details.
-     * @param file The updated image file, if any.
+     * @param request   The updated product details.
+     * @param file      The updated image file, if any.
      * @return The updated product response.
      * @throws RuntimeException if an error occurs while updating the product or uploading the image.
      */
     @Transactional
     public ProductResponse updateProduct(String productId, ProductRequest request, MultipartFile file) {
         try {
-            String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
-            byte[] imageData = ImageUtils.compressImage(file.getBytes());
-            Blob imageDataBlob = ImageUtils.byteArrayToBlob(imageData);
-
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product dengan ID : " + productId + " tidak ditemukan!"));
 
             if (file != null && !file.isEmpty()) {
-                hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
-                imageData = ImageUtils.compressImage(file.getBytes());
+                String hashedFileName = ImageUtils.hashFileName(file.getOriginalFilename());
+                byte[] imageData = ImageUtils.compressImage(file.getBytes());
 
                 product.setImageName(hashedFileName);
                 product.setImageType(file.getContentType());
-                product.setImageData(imageDataBlob);
+                product.setImageData(imageData);
             }
 
             if (request.getRating() != null) {
                 product.setRating(request.getRating());
-            }
-            if (request.getDiscount() != null) {
-                product.setDiscount(request.getDiscount());
             }
 
             if (request.getUnits() != null) {
@@ -161,18 +193,22 @@ public class ProductService {
                 }
             }
 
-            if (categoriesList.size() > 0) {
+            if (!categoriesList.isEmpty()) {
                 product.setCategories(categoriesList);
             }
 
             productRepository.save(product);
 
             return toProductResponse(product);
-        } catch (IOException | SQLException e) {
+        } catch (IOException e) {
             throw new RuntimeException("Gagal mengupdate produk: " + e.getMessage());
         }
     }
 
+    /**
+     *
+     * @param id ini digunakan untuk menghapus data product berdasarkan ID Yang ada dalam database
+     */
     @Transactional
     public void delete(String id) {
         Product product = productRepository.findById(id)
@@ -184,11 +220,11 @@ public class ProductService {
     /**
      * Finds a product by its ID
      *
-     * @param  id   the ID of the product to find
-     * @return      a response containing the product details
+     * @param id the ID of the product to find
+     * @return a response containing the product details
      */
     @Transactional(readOnly = true)
-    public ProductResponse findById(String id) {
+    public ProductResponse findById(String id) throws IOException {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With ID : " + id + " Not Found!"));
 
@@ -234,83 +270,26 @@ public class ProductService {
     public List<ProductResponse> findByPrice(BigDecimal price) {
         List<Product> products = productRepository.findAllByPrice(price);
         if (products.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Products With Price : " + price + " Not Found!");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Price : " + price + " Not Found!");
         }
-        return products.stream().map(this::toProductResponse).collect(Collectors.toList());
+        return products.stream().map(this::toProductResponse).toList();
     }
 
     /**
-     *
-     * @param imageName
-     * @param imageData
-     * @return
-     * @throws IOException
-     */
-    private String saveImageAndGetUrl(String imageName, Blob imageData) throws IOException {
-        String folderPath = "C:\\Users\\dearl\\Documents\\ApiRestaurant\\src\\main\\resources\\static\\image\\upload\\";
-        File folder = new File(folderPath);
-        if (!folder.exists()) {
-            folder.mkdirs();
-        }
-
-        // Buat nama file yang unik dengan UUID
-        String uniqueFileName = UUID.randomUUID().toString();
-        String filePath = folderPath + uniqueFileName;
-
-        // Konversi blob menjadi byte array
-        byte[] imageBytes;
-        try (InputStream inputStream = imageData.getBinaryStream()) {
-            imageBytes = inputStream.readAllBytes();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IOException("Failed to read image data from Blob", e);
-        }
-
-        // Simpan byte array sebagai file gambar
-        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
-            outputStream.write(imageBytes);
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new IOException("Failed to save image file", e);
-        }
-
-        // Kembalikan URL gambar
-        return "http://192.168.1.3:2000/image/upload/" + uniqueFileName;
-    }
-
-    /**
-     *
-     * @param blob
-     * @return
-     * @throws SQLException
-     */
-    private byte[] blobToByteArray(Blob blob) throws SQLException {
-        try (InputStream inputStream = blob.getBinaryStream()) {
-            return inputStream.readAllBytes();
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new SQLException("Failed to convert Blob to byte array", e);
-        }
-    }
-
-    /**
-     *
      * @param imageId
      * @return
      */
     @Transactional(readOnly = true)
     public byte[] getImageDataById(String imageId) {
-        try {
-            Product product = productRepository.findByImageName(imageId);
-            if (product != null) {
-                Blob imageDataBlob = product.getImageData();
-                return blobToByteArray(imageDataBlob);
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image with ID : " + imageId + " not found!");
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to retrieve image data: " + e.getMessage());
+        Optional<Product> product = productRepository.findByImageName(imageId);
+
+        if (product != null) {
+            product.get().getImageName();
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image With Name: " + imageId + " Not Found!");
         }
+
+        return product.get().getImageData();
     }
 
 
@@ -322,30 +301,20 @@ public class ProductService {
      */
     private ProductResponse toProductResponse(Product product) {
         List<Categories> categories = product.getCategories();
-        String imageUrl = null;
-        byte[] imageDataBytes = null;
-
-        try {
-            imageUrl = saveImageAndGetUrl(product.getImageName(), product.getImageData());
-            imageDataBytes = blobToByteArray(product.getImageData());
-        } catch (IOException | SQLException e) {
-            e.printStackTrace();
-        }
 
         return ProductResponse.builder()
                 .units(product.getUnits().stream().map(Unit::toString).toList())
                 .id(product.getId())
                 .title(product.getTitle())
                 .rating(product.getRating())
-                .discount(product.getDiscount())
                 .price(product.getPrice())
                 .qty(product.getQty())
                 .description(product.getDescription())
                 .categories(categories.stream().map(Categories::getNameCategory).toList())
                 .imageName(product.getImageName())
                 .imageType(product.getImageType())
-                .imageData(imageDataBytes) // Tetap menyimpan imageData
-                .imageUrl(imageUrl) // Gunakan URL gambar
+                .imageData(product.getImageData()) // Tetap menyimpan imageData
+                .filePath(product.getFilePath()) // Gunakan URL gambar
                 .build();
     }
 }

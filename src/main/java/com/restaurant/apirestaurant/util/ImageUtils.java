@@ -83,13 +83,4 @@ public class ImageUtils {
             return null;
         }
     }
-
-    /**
-     * Converts a byte array to a java.sql.Blob object.
-     * @param imageData The byte array representing the image data.
-     * @return A java.sql.Blob object.
-     */
-    public static Blob byteArrayToBlob(byte[] imageData) throws SQLException {
-        return new javax.sql.rowset.serial.SerialBlob(imageData);
-    }
 }

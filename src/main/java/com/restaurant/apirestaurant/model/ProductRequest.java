@@ -17,7 +17,6 @@ public class ProductRequest {
     private List<Unit> units;
     private String title;
     private BigDecimal rating;
-    private BigDecimal discount;
     private BigDecimal price;
     private Integer qty;
     private String description;
