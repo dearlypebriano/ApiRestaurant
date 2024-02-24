@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service class for managing products.
@@ -76,6 +75,7 @@ public class ProductService {
                         .description(request.getDescription())
                         .categories(categoryList)
                         .units(request.getUnits())
+                        .details(request.getDetails())
                 .build();
 
         String originalFileName = file.getOriginalFilename();
@@ -158,6 +158,10 @@ public class ProductService {
 
             if (request.getDescription() != null) {
                 product.setDescription(request.getDescription());
+            }
+
+            if (request.getDetails() != null) {
+                product.setDetails(request.getDetails());
             }
 
             List<CategoriesRequest> categoriesRequestList = request.getCategories();
@@ -253,6 +257,20 @@ public class ProductService {
         return products.stream().map(this::toProductResponse).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductResponse> findByCategories(List<Categories> categories) {
+        List<Product> products = productRepository.findAllByCategories(categories);
+        if (products.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Categories : " + categories + " Not Found");
+        }
+        return products.stream().map(this::toProductResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Categories> findCategoriesByName(List<String> categoryNames) {
+        return categoriesRepository.findAllByNameIn(categoryNames);
+    }
+
     /**
      * Converts a Product object to a ProductResponse object
      *
@@ -271,6 +289,7 @@ public class ProductService {
                 .qty(product.getQty())
                 .description(product.getDescription())
                 .categories(categories.stream().map(Categories::getNameCategory).toList())
+                .details(product.getDetails())
                 .imageName(product.getImageName())
                 .imageType(product.getImageType())
                 .imageData(product.getImageData()) // Tetap menyimpan imageData

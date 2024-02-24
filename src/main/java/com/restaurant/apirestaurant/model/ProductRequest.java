@@ -21,4 +21,5 @@ public class ProductRequest {
     private Integer qty;
     private String description;
     private List<CategoriesRequest> categories;
+    private String details;
 }

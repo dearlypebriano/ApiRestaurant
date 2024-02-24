@@ -21,6 +21,7 @@ public class ProductResponse {
     private Integer qty;
     private String description;
     private List<String> categories;
+    private String details;
     private String imageName;
     private String imageType;
     private byte[] imageData;

@@ -47,6 +47,8 @@ public class Product {
     )
     private List<Categories> categories;
 
+    private String details;
+
     @Column(name = "image_name")
     private String imageName;
 

@@ -1,10 +1,10 @@
 package com.restaurant.apirestaurant.controller;
 
+import com.restaurant.apirestaurant.entity.Categories;
 import com.restaurant.apirestaurant.entity.Unit;
 import com.restaurant.apirestaurant.model.CategoriesRequest;
 import com.restaurant.apirestaurant.model.ProductRequest;
 import com.restaurant.apirestaurant.model.ProductResponse;
-import com.restaurant.apirestaurant.service.FileStorageService;
 import com.restaurant.apirestaurant.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,14 +30,16 @@ public class ProductController {
 
     /**
      * Metode ini digunakan untuk membuat produk baru
-     * @param units parameters ini digunakan untuk menentukan unit produk
-     * @param title parameters ini digunakan untuk menentukan judul produk
-     * @param rating parameters ini digunakan untuk menentukan rating
-     * @param price parameters ini digunakan untuk menentukan harga produk
-     * @param qty parameters ini digunakan untuk menentukan quantity
+     *
+     * @param units       parameters ini digunakan untuk menentukan unit produk
+     * @param title       parameters ini digunakan untuk menentukan judul produk
+     * @param rating      parameters ini digunakan untuk menentukan rating
+     * @param price       parameters ini digunakan untuk menentukan harga produk
+     * @param qty         parameters ini digunakan untuk menentukan quantity
      * @param description parameters ini digunakan untuk menentukan deskripsi
-     * @param categories parameters ini digunakan untuk menentukan kategori
-     * @param file parameters ini digunakan untuk menentukan gambar
+     * @param categories  parameters ini digunakan untuk menentukan kategori
+     * @param details     parameters ini digunakan untuk menampilkan detail dari suatu produk
+     * @param file        parameters ini digunakan untuk menentukan gambar
      * @return
      * @throws IOException
      */
@@ -50,6 +52,7 @@ public class ProductController {
             @RequestParam Integer qty,
             @RequestParam String description,
             @RequestParam List<String> categories,
+            @RequestParam String details,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
         ProductRequest request = new ProductRequest();
@@ -68,8 +71,8 @@ public class ProductController {
                     return categoryRequest;
                 })
                 .toList();
-
         request.setCategories(categoriesRequestList);
+        request.setDetails(details);
 
         ProductResponse response = productService.createProduct(request, file);
         String imageName = response.getImageName();
@@ -103,6 +106,7 @@ public class ProductController {
             @RequestParam Integer qty,
             @RequestParam String description,
             @RequestParam List<String> categories,
+            @RequestParam String details,
             @RequestPart("file") MultipartFile file
     ) throws IOException {
         ProductRequest request = new ProductRequest();
@@ -123,6 +127,7 @@ public class ProductController {
                 .toList();
 
         request.setCategories(categoriesRequestList);
+        request.setDetails(details);
 
         ProductResponse response = productService.updateProduct(id, request, file);
         String imageName = response.getImageName();
@@ -194,5 +199,12 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> findByPrice(@PathVariable BigDecimal price) {
         List<ProductResponse> response = productService.findByPrice(price);
         return ResponseEntity.ok().body(response);
+    }
+
+    @GetMapping(path = "/find/{categories}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ProductResponse>> findByCategories(@RequestParam List<String> categoryNames) {
+        List<Categories> categories = productService.findCategoriesByName(categoryNames);
+        List<ProductResponse> products = productService.findByCategories(categories);
+        return ResponseEntity.ok().body(products);
     }
 }

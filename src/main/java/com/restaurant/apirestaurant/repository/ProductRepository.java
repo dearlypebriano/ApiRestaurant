@@ -1,5 +1,6 @@
 package com.restaurant.apirestaurant.repository;
 
+import com.restaurant.apirestaurant.entity.Categories;
 import com.restaurant.apirestaurant.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -30,4 +31,18 @@ public interface ProductRepository extends JpaRepository<Product, String> {
      * @return
      */
     Optional<Product> findByImageName(String imageName);
+
+    /**
+     *
+     * @param categories
+     * @return
+     */
+    List<Product> findAllByCategories(List<Categories> categories);
+
+    /**
+     *
+     * @param productNames
+     * @return
+     */
+    List<Product> findByTitleIn(List<String> productNames);
 }
