@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -155,7 +156,7 @@ public class ProductController {
      * @param id ID produk yang akan ditemukan.
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang ditemukan.
      */
-    @GetMapping(path = "/find/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/find/byId/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductResponse> findById(@RequestParam String id) throws IOException {
         ProductResponse response = productService.findById(id);
         return ResponseEntity.ok().body(response);
@@ -183,8 +184,8 @@ public class ProductController {
      * @param title Judul produk yang akan ditemukan.
      * @return ResponseEntity yang berisi objek ProductResponse dari produk yang ditemukan.
      */
-    @GetMapping(path = "/find/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ProductResponse> findByTitle(@PathVariable String title) {
+    @GetMapping(path = "/find/byTitle/{title}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductResponse> findByTitle(@RequestParam String title) {
         ProductResponse response = productService.findByTitle(title);
         return ResponseEntity.ok().body(response);
     }
@@ -195,16 +196,9 @@ public class ProductController {
      * @param price Harga produk yang akan dicari.
      * @return ResponseEntity yang berisi daftar objek ProductResponse dari produk dengan harga yang sesuai.
      */
-    @GetMapping(path = "/find/{price}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ProductResponse>> findByPrice(@PathVariable BigDecimal price) {
+    @GetMapping(path = "/find/byPrice/{price}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ProductResponse>> findByPrice(@RequestParam BigDecimal price) {
         List<ProductResponse> response = productService.findByPrice(price);
         return ResponseEntity.ok().body(response);
-    }
-
-    @GetMapping(path = "/find/{categories}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<ProductResponse>> findByCategories(@RequestParam List<String> categoryNames) {
-        List<Categories> categories = productService.findCategoriesByName(categoryNames);
-        List<ProductResponse> products = productService.findByCategories(categories);
-        return ResponseEntity.ok().body(products);
     }
 }

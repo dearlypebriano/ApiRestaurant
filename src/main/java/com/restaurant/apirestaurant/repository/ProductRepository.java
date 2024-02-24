@@ -27,19 +27,6 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     List<Product> findAllByPrice(BigDecimal price);
 
     /**
-     * @param imageName
-     * @return
-     */
-    Optional<Product> findByImageName(String imageName);
-
-    /**
-     *
-     * @param categories
-     * @return
-     */
-    List<Product> findAllByCategories(List<Categories> categories);
-
-    /**
      *
      * @param productNames
      * @return

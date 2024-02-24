@@ -1,7 +1,6 @@
 package com.restaurant.apirestaurant.repository;
 
 import com.restaurant.apirestaurant.entity.Categories;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,7 +12,4 @@ import java.util.List;
 public interface CategoriesRepository extends JpaRepository<Categories, Long> {
 
     Categories findByNameCategory(String nameCategory);
-
-    @Query("SELECT c FROM Categories c WHERE c.nameCategory IN :names")
-    List<Categories> findAllByNameIn(@Param("names") List<String> names);
 }

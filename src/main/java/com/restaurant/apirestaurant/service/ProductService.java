@@ -257,20 +257,6 @@ public class ProductService {
         return products.stream().map(this::toProductResponse).toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<ProductResponse> findByCategories(List<Categories> categories) {
-        List<Product> products = productRepository.findAllByCategories(categories);
-        if (products.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product With Categories : " + categories + " Not Found");
-        }
-        return products.stream().map(this::toProductResponse).toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<Categories> findCategoriesByName(List<String> categoryNames) {
-        return categoriesRepository.findAllByNameIn(categoryNames);
-    }
-
     /**
      * Converts a Product object to a ProductResponse object
      *
